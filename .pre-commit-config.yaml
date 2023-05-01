@@ -4,6 +4,9 @@ repos:
     hooks:
       - id: check-yaml
         name: Check YAML file syntax
+        
+      - id: check-added-large-files
+        args: [--maxkb=5120, --name=File size limit (5MB)]
 
   - repo: https://github.com/pycqa/flake8
     rev: 3.7.9
