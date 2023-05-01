@@ -9,15 +9,23 @@ Tests for `atd_utils` module.
 """
 
 import unittest
+import shutil
 import os
-import json
+import sys
 from atd_utils.data_utils import CfbdClient, APIKeyError, EndpointNotValid
 from unittest.mock import patch
 
 
 class TestCfbdClient(unittest.TestCase):
     def setUp(self):
-        self.client = CfbdClient(api_key='your_api_key_here', data_dir="test_data")
+        """Set up test fixtures"""
+        self.client = CfbdClient(
+            api_key="your_api_key_here", data_dir="test_data", db="test_db.db"
+        )
+
+    def tearDown(self):
+        """Tear down test fixtures"""
+        shutil.rmtree("test_data", ignore_errors=True)
 
     def test_save_data(self):
         """
@@ -43,12 +51,14 @@ class TestCfbdClient(unittest.TestCase):
 
     def test_pull_data(self):
         """
-        Test that the pull_data function pulls data from the API and handles 
+        Test that the pull_data function pulls data from the API and handles
         invalid endpoint errors correctly.
         """
+
         class TestGame:
             def to_dict(self):
                 return {"a": 1}
+
         def _mock_cfbd_method(*args, **kwargs):
             return [TestGame()]  # Return a fake response
 
@@ -60,32 +70,32 @@ class TestCfbdClient(unittest.TestCase):
             data = CfbdClient.pull_data(test_year, test_endpoint)
             self.assertIsInstance(data, list)
 
-
     def test_pull_data_invalid_endpoint(self):
-        """Test the pull_data function with an invalid 
+        """Test the pull_data function with an invalid
         endpoint raises an `EndpointNotValid` exception.
         """
         # Test pull_data with an invalid endpoint
         with self.assertRaises(EndpointNotValid):
-            data = CfbdClient.pull_data(test_year, "invalid_endpoint")
+            _ = CfbdClient.pull_data(1234, "invalid_endpoint")
 
     def test_api_key_error(self):
         """
-        Test that the CfbdClient raises an APIKeyError when initialized with an empty API key,
-        either through the environment variable or by passing it explicitly.
+        Test that the CfbdClient raises an APIKeyError when initialized with
+        an empty API key, either through the environment variable or by
+        passing it explicitly.
         """
         # Save the current value of CFBD_API_KEY
         original_api_key = os.environ.get("CFBD_API_KEY")
         # Set the CFBD_API_KEY environment variable to an empty string
         os.environ.pop("CFBD_API_KEY")
         with self.assertRaises(APIKeyError):
-            client = CfbdClient()
+            _ = CfbdClient()
         # Restore the original value of CFBD_API_KEY
         if original_api_key:
             os.environ["CFBD_API_KEY"] = original_api_key
 
         with self.assertRaises(APIKeyError):
-            client = CfbdClient(api_key="")
+            _ = CfbdClient(api_key="")
 
 
 if __name__ == "__main__":

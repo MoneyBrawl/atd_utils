@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import cfbd
-from cfbd.rest import ApiException
+import sqlite3
 
 ENDPOINT_DICT = {
     "get_lines": "BettingApi",
@@ -54,58 +54,70 @@ ENDPOINT_DICT = {
     "get_talent": "TeamsApi",
     "get_team_matchup": "TeamsApi",
     "get_teams": "TeamsApi",
-    "get_venues": "VenuesApi"
+    "get_venues": "VenuesApi",
 }
 
 # Configure API key authorization: ApiKeyAuth
 CONFIGURATION = cfbd.Configuration()
 
+
 class APIKeyError(Exception):
     pass
+
 
 class EndpointNotValid(Exception):
     pass
 
+
 class CfbdClient(object):
-    def __init__(self, api_key=None, data_dir=None):
+    def __init__(self, api_key=None, data_dir="data", db="cfbd.db"):
         if api_key:
-            CONFIGURATION.api_key['Authorization'] = api_key
-        elif 'CFBD_API_KEY' in os.environ:
-            CONFIGURATION.api_key['Authorization'] = os.environ['CFBD_API_KEY']
+            CONFIGURATION.api_key["Authorization"] = api_key
+        elif "CFBD_API_KEY" in os.environ:
+            CONFIGURATION.api_key["Authorization"] = os.environ["CFBD_API_KEY"]
         else:
-            raise APIKeyError('API key not provided and CFBD_API_KEY environment variable not set.')
-        
-        CONFIGURATION.api_key_prefix['Authorization'] = 'Bearer'
-        
-        self.data_dir = data_dir if data_dir else "data"
-	
-    
+            raise APIKeyError(
+                """API key not provided and CFBD_API_KEY environment variable
+                not set."""
+            )
+
+        CONFIGURATION.api_key_prefix["Authorization"] = "Bearer"
+
+        self.data_dir = data_dir
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        self.conn = sqlite3.connect(os.path.join(data_dir, db))
+
     def save_data(self, sub_dir, filename, data):
         """
         Save data to a file within a subdirectory.
 
         Args:
-            sub_dir (str): The subdirectory to append to self.data_dir to save the data in.
+            sub_dir (str): The subdirectory to append to self.data_dir to save
+                            the data in.
             filename (str): The name of the file to save the data to.
             data (str): The data to save.
         """
         path = os.path.join(self.data_dir, sub_dir)
         if not os.path.exists(path):
             os.makedirs(path)
-        with open(f'{path}/{filename}', 'w') as f:
-            f.write(data) 
+        with open(f"{path}/{filename}", "w") as f:
+            f.write(data)
 
     def pull_data(year, endpoint_name):
         """
-        Retrieve data from a specified College Football Data API endpoint for a given year.
+        Retrieve data from a specified College Football Data API endpoint for
+        a given year.
 
         Args:
             year (int): The year for which to fetch data.
-            endpoint_name (str): The name of the endpoint method to call on the API instance.
-                                This should match one of the keys in ENDPOINT_DICT.
+            endpoint_name (str): The name of the endpoint method to call on
+                                the API instance. This should match one of
+                                the keys in ENDPOINT_DICT.
 
         Returns:
-            list: A list of dictionaries containing the fetched data for the specified year and endpoint.
+            list: A list of dictionaries containing the fetched data for the
+            specified year and endpoint.
 
         Examples:
             >>> pull_data(2021, "get_games")
@@ -113,8 +125,10 @@ class CfbdClient(object):
         try:
             client_name = ENDPOINT_DICT[endpoint_name]
         except KeyError:
-            raise EndpointNotValid('This endpoint does not exist or has not been setup yet.')
-        api_instance = getattr(cfbd, client_name)(cfbd.ApiClient(CONFIGURATION))
+            msg = "This endpoint does not exist or has not been setup yet."
+            raise EndpointNotValid(msg)
+        client = getattr(cfbd, client_name)
+        api_instance = client(cfbd.ApiClient(CONFIGURATION))
         endpoint_method = getattr(api_instance, endpoint_name)
         api_response = endpoint_method(year=year)
         results = [x.to_dict() for x in api_response]
