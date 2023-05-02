@@ -196,6 +196,12 @@ class TestCfbdClient(unittest.TestCase):
         assert sum(df.year == self.year_1) == 2
         assert sum(df.year == self.year_2) == 2
 
+    def test_help(self):
+        """
+        Test that the help function runs
+        """
+        assert self.client.help()
+
 
 if __name__ == "__main__":
     sys.exit(unittest.main())

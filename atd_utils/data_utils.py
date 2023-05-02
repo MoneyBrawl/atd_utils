@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
+from os.path import join
 import json
 import pandas as pd
 import cfbd
 import sqlite3
 from typing import List, Dict, Optional
 
-with open("config/endpoints.json", "r") as f:
+dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
+with open(join(dir_path, "config/endpoints.json"), "r") as f:
     ENDPOINT_DICT = json.load(f)
 
 
@@ -136,3 +139,22 @@ class CfbdClient(object):
         if save_to_db:
             df.to_sql(endpoint_name, self.conn, if_exists="replace")
         return df
+
+    def help(self):
+        methods = [
+            method_name
+            for method_name in dir(self)
+            if callable(getattr(self, method_name))  # noqa
+            and not method_name.startswith("__")  # noqa
+        ]  # noqa
+        attrs = [
+            attr_name
+            for attr_name in dir(self)
+            if not callable(getattr(self, attr_name))  # noqa
+            and not attr_name.startswith("__")  # noqa
+        ]  # noqa
+        print("Methods:")
+        print("\n".join(methods))
+        print("Attributes:")
+        print("\n".join(attrs))
+        return True
