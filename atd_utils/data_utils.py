@@ -1,64 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
+import json
+import pandas as pd
 import cfbd
 import sqlite3
+from typing import List, Dict, Optional
 
-ENDPOINT_DICT = {
-    "get_lines": "BettingApi",
-    "get_coaches": "CoachesApi",
-    "get_conferences": "ConferencesApi",
-    "get_draft_picks": "DraftApi",
-    "get_nfl_positions": "DraftApi",
-    "get_nfl_teams": "DraftApi",
-    "get_drives": "DrivesApi",
-    "get_advanced_box_score": "GamesApi",
-    "get_calendar": "GamesApi",
-    "get_game_media": "GamesApi",
-    "get_game_weather": "GamesApi",
-    "get_games": "GamesApi",
-    "get_player_game_stats": "GamesApi",
-    "get_scoreboard": "GamesApi",
-    "get_team_game_stats": "GamesApi",
-    "get_team_records": "GamesApi",
-    "get_game_ppa": "MetricsApi",
-    "get_player_game_ppa": "MetricsApi",
-    "get_player_season_ppa": "MetricsApi",
-    "get_predicted_points": "MetricsApi",
-    "get_pregame_win_probabilities": "MetricsApi",
-    "get_team_ppa": "MetricsApi",
-    "get_win_probability_data": "MetricsApi",
-    "get_player_season_stats": "PlayersApi",
-    "get_player_usage": "PlayersApi",
-    "get_returning_production": "PlayersApi",
-    "get_transfer_portal": "PlayersApi",
-    "player_search": "PlayersApi",
-    "get_live_plays": "PlaysApi",
-    "get_play_stat_types": "PlaysApi",
-    "get_play_stats": "PlaysApi",
-    "get_play_types": "PlaysApi",
-    "get_plays": "PlaysApi",
-    "get_rankings": "RankingsApi",
-    "get_conference_sp_ratings": "RatingsApi",
-    "get_elo_ratings": "RatingsApi",
-    "get_sp_ratings": "RatingsApi",
-    "get_srs_ratings": "RatingsApi",
-    "get_recruiting_groups": "RecruitingApi",
-    "get_recruiting_players": "RecruitingApi",
-    "get_recruiting_teams": "RecruitingApi",
-    "get_advanced_team_game_stats": "StatsApi",
-    "get_advanced_team_season_stats": "StatsApi",
-    "get_stat_categories": "StatsApi",
-    "get_team_season_stats": "StatsApi",
-    "get_fbs_teams": "TeamsApi",
-    "get_roster": "TeamsApi",
-    "get_talent": "TeamsApi",
-    "get_team_matchup": "TeamsApi",
-    "get_teams": "TeamsApi",
-    "get_venues": "VenuesApi",
-}
-
-# Configure API key authorization: ApiKeyAuth
-CONFIGURATION = cfbd.Configuration()
+with open("config/endpoints.json", "r") as f:
+    ENDPOINT_DICT = json.load(f)
 
 
 class APIKeyError(Exception):
@@ -69,26 +18,37 @@ class EndpointNotValid(Exception):
     pass
 
 
+class EndpointLoadingNotImplemented(Exception):
+    pass
+
+
 class CfbdClient(object):
-    def __init__(self, api_key=None, data_dir="data", db="cfbd.db"):
+    def __init__(
+        self,  # noqa
+        api_key: Optional[str] = None,  # noqa
+        data_dir: str = "data",  # noqa
+        db: str = "cfbd.db",
+    ) -> None:  # noqa
+        self.cfbd_configuration = cfbd.Configuration()
         if api_key:
-            CONFIGURATION.api_key["Authorization"] = api_key
+            self.cfbd_configuration.api_key["Authorization"] = api_key
         elif "CFBD_API_KEY" in os.environ:
-            CONFIGURATION.api_key["Authorization"] = os.environ["CFBD_API_KEY"]
+            key = os.environ["CFBD_API_KEY"]
+            self.cfbd_configuration.api_key["Authorization"] = key
         else:
             raise APIKeyError(
                 """API key not provided and CFBD_API_KEY environment variable
                 not set."""
             )
 
-        CONFIGURATION.api_key_prefix["Authorization"] = "Bearer"
+        self.cfbd_configuration.api_key_prefix["Authorization"] = "Bearer"
 
         self.data_dir = data_dir
         if not os.path.exists(data_dir):
             os.makedirs(data_dir)
         self.conn = sqlite3.connect(os.path.join(data_dir, db))
 
-    def save_data(self, sub_dir, filename, data):
+    def save_data(self, sub_dir: str, filename: str, data: str) -> None:
         """
         Save data to a file within a subdirectory.
 
@@ -104,7 +64,9 @@ class CfbdClient(object):
         with open(f"{path}/{filename}", "w") as f:
             f.write(data)
 
-    def pull_data(year, endpoint_name):
+    # TODO add years option, so you can pass a tuple of years and it will try
+    # until failure on that range.
+    def pull_data(self, year: int, endpoint_name: str) -> List[Dict]:
         """
         Retrieve data from a specified College Football Data API endpoint for
         a given year.
@@ -123,13 +85,54 @@ class CfbdClient(object):
             >>> pull_data(2021, "get_games")
         """
         try:
-            client_name = ENDPOINT_DICT[endpoint_name]
+            api_name = ENDPOINT_DICT["implemented"][endpoint_name]["api"]
         except KeyError:
             msg = "This endpoint does not exist or has not been setup yet."
             raise EndpointNotValid(msg)
-        client = getattr(cfbd, client_name)
-        api_instance = client(cfbd.ApiClient(CONFIGURATION))
+        api = getattr(cfbd, api_name)
+        api_instance = api(cfbd.ApiClient(self.cfbd_configuration))
         endpoint_method = getattr(api_instance, endpoint_name)
         api_response = endpoint_method(year=year)
         results = [x.to_dict() for x in api_response]
+        self.save_data(
+            endpoint_name,  # noqa
+            f"{endpoint_name}_{year}.json",  # noqa
+            json.dumps(results),
+        )
         return results
+
+    def load_to_df(
+        self, endpoint_name: str, save_to_db: bool = False  # noqa
+    ) -> pd.DataFrame:  # noqa
+        try:
+            endpoint_config = ENDPOINT_DICT["implemented"][endpoint_name]
+        except KeyError:
+            raise EndpointLoadingNotImplemented(
+                f"""Either {endpoint_name} is not an endpoint, or I need to
+                test and document in config/endpoints.json. whether
+                json_normalize needs record_path and/or meta.
+                """
+            )
+        record_path = endpoint_config.get("record_path", None)
+        meta = endpoint_config.get("meta", None)
+        endpoint_path = os.path.join(self.data_dir, endpoint_name)
+        dir_list = os.listdir(endpoint_path)
+        df = None
+        for file in dir_list:
+            if file[0] == ".":
+                continue
+            with open(os.path.join(endpoint_path, file), "r") as f:
+                year = json.loads(f.read())
+            year_df = pd.json_normalize(
+                year, record_path=record_path, meta=meta  # noqa  # noqa
+            )
+            year_df["year"] = int(file.split("_")[-1].split(".")[0])
+            if df is None:
+                df = year_df.copy()
+            else:
+                df = pd.concat([df, year_df])
+
+        df.reset_index(drop=True, inplace=True)
+        if save_to_db:
+            df.to_sql(endpoint_name, self.conn, if_exists="replace")
+        return df

@@ -1,0 +1,161 @@
+{
+    "implemented": {
+        "get_recruiting_players": {
+            "api": "RecruitingApi"
+        },
+        "get_coaches": {
+            "api": "CoachesApi",
+            "record_path": ["seasons"], 
+            "meta": ["first_name", "last_name", "hire_date"]
+        }
+    }, 
+    "not_implemented": {
+        "get_lines": {
+            "api": "BettingApi"
+        },
+        "get_conferences": {
+            "api": "ConferencesApi"
+        },
+        "get_draft_picks": {
+            "api": "DraftApi"
+        },
+        "get_nfl_positions": {
+            "api": "DraftApi"
+        },
+        "get_nfl_teams": {
+            "api": "DraftApi"
+        },
+        "get_drives": {
+            "api": "DrivesApi"
+        },
+        "get_advanced_box_score": {
+            "api": "GamesApi"
+        },
+        "get_calendar": {
+            "api": "GamesApi"
+        },
+        "get_game_media": {
+            "api": "GamesApi"
+        },
+        "get_game_weather": {
+            "api": "GamesApi"
+        },
+        "get_games": {
+            "api": "GamesApi"
+        },
+        "get_player_game_stats": {
+            "api": "GamesApi"
+        },
+        "get_scoreboard": {
+            "api": "GamesApi"
+        },
+        "get_team_game_stats": {
+            "api": "GamesApi"
+        },
+        "get_team_records": {
+            "api": "GamesApi"
+        },
+        "get_game_ppa": {
+            "api": "MetricsApi"
+        },
+        "get_player_game_ppa": {
+            "api": "MetricsApi"
+        },
+        "get_player_season_ppa": {
+            "api": "MetricsApi"
+        },
+        "get_predicted_points": {
+            "api": "MetricsApi"
+        },
+        "get_pregame_win_probabilities": {
+            "api": "MetricsApi"
+        },
+        "get_team_ppa": {
+            "api": "MetricsApi"
+        },
+        "get_win_probability_data": {
+            "api": "MetricsApi"
+        },
+        "get_player_season_stats": {
+            "api": "PlayersApi"
+        },
+        "get_player_usage": {
+            "api": "PlayersApi"
+        },
+        "get_returning_production": {
+            "api": "PlayersApi"
+        },
+        "get_transfer_portal": {
+            "api": "PlayersApi"
+        },
+        "player_search": {
+            "api": "PlayersApi"
+        },
+        "get_live_plays": {
+            "api": "PlaysApi"
+        },
+        "get_play_stat_types": {
+            "api": "PlaysApi"
+        },
+        "get_play_stats": {
+            "api": "PlaysApi"
+        },
+        "get_play_types": {
+            "api": "PlaysApi"
+        },
+        "get_plays": {
+            "api": "PlaysApi"
+        },
+        "get_rankings": {
+            "api": "RankingsApi"
+        },
+        "get_conference_sp_ratings": {
+            "api": "RatingsApi"
+        },
+        "get_elo_ratings": {
+            "api": "RatingsApi"
+        },
+        "get_sp_ratings": {
+            "api": "RatingsApi"
+        },
+        "get_srs_ratings": {
+            "api": "RatingsApi"
+        },
+        "get_recruiting_groups": {
+            "api": "RecruitingApi"
+        },
+        "get_recruiting_teams": {
+            "api": "RecruitingApi"
+        },
+        "get_advanced_team_game_stats": {
+            "api": "StatsApi"
+        },
+        "get_advanced_team_season_stats": {
+            "api": "StatsApi"
+        },
+        "get_stat_categories": {
+            "api": "StatsApi"
+        },
+        "get_team_season_stats": {
+            "api": "StatsApi"
+        },
+        "get_fbs_teams": {
+            "api": "TeamsApi"
+        },
+        "get_roster": {
+            "api": "TeamsApi"
+        },
+        "get_talent": {
+            "api": "TeamsApi"
+        },
+        "get_team_matchup": {
+            "api": "TeamsApi"
+        },
+        "get_teams": {
+            "api": "TeamsApi"
+        },
+        "get_venues": {
+            "api": "VenuesApi"
+        }
+    }
+}
