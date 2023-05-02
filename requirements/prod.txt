@@ -11,6 +11,7 @@ atpublic==3.1.1
 attrs==23.1.0
 billiard==3.6.4.0
 binaryornot==0.4.4
+black==22.3.0
 celery==5.2.7
 certifi==2022.12.7
 cfbd==4.4.12
@@ -26,6 +27,7 @@ colorama==0.4.6
 configobj==5.0.8
 contourpy==1.0.7
 cookiecutter==2.1.1
+coverage==7.2.5
 cryptography==40.0.2
 cycler==0.11.0
 dictdiffer==0.9.0
@@ -43,6 +45,7 @@ dvc-studio-client==0.8.0
 dvc-task==0.2.1
 exceptiongroup==1.1.1
 filelock==3.12.0
+flake8==6.0.0
 flatten-dict==0.4.2
 flufl.lock==7.1.1
 fonttools==4.39.3
@@ -65,8 +68,10 @@ kombu==5.2.4
 markdown-it-py==2.2.0
 MarkupSafe==2.1.2
 matplotlib==3.7.1
+mccabe==0.7.0
 mdurl==0.1.2
 multidict==6.0.4
+mypy-extensions==1.0.0
 nanotime==0.5.2
 networkx==3.1
 nodeenv==1.7.0
@@ -82,13 +87,16 @@ pluggy==1.0.0
 pre-commit==3.2.2
 prompt-toolkit==3.0.38
 psutil==5.9.5
+pycodestyle==2.10.0
 pycparser==2.21
 pydot==1.4.2
+pyflakes==3.0.1
 pygit2==1.12.0
 Pygments==2.15.1
 pygtrie==2.5.0
 pyparsing==3.0.9
 pytest==7.3.1
+pytest-cov==4.0.0
 python-dateutil==2.8.2
 python-slugify==8.0.1
 pytz==2023.3
