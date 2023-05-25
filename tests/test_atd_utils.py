@@ -17,6 +17,8 @@ import json
 import pandas as pd
 import sqlite3
 from atd_utils import data_utils
+
+# from atd_utils.cfbd_endpoint_configs import ENDPOINTS_DICT
 from atd_utils.data_utils import (
     CfbdClient,
     APIKeyError,  # noqa
@@ -108,9 +110,38 @@ class TestCfbdClient(unittest.TestCase):
             # self.assertEqual(result, [{"field": "value"}])
             # Test pull_data with a valid endpoint and year
 
-            mock_dict = {"implemented": {self.test_endpoint: {"api": "TEST"}}}
-            with patch.dict(data_utils.__dict__, {"ENDPOINT_DICT": mock_dict}):
-                data = self.client.pull_data(self.year_1, self.test_endpoint)
+            mock_dict = {
+                "implemented": {self.test_endpoint: {"api": "TESTApi"}}
+            }  # noqa
+            with patch.dict(data_utils.__dict__, {"ENDPOINTS_DICT": mock_dict}):  # noqa
+                data = self.client.pull_year(self.year_1, self.test_endpoint)
+                self.assertIsInstance(data, list)
+
+            # Test the pull_func gets pulled
+            request_params = {"go": "dawgs"}
+            endpoints_dict_mock = {
+                "api": "TEST",
+                "pull_func": lambda x, y, z, request_params: [request_params],
+            }
+            mock_dict = {
+                "implemented": {self.test_endpoint: endpoints_dict_mock}
+            }  # noqa
+            with patch.dict(data_utils.__dict__, {"ENDPOINTS_DICT": mock_dict}):  # noqa
+                data = self.client.pull_year(
+                    self.year_1,
+                    self.test_endpoint,
+                    request_params=request_params,  # noqa
+                )
+                assert data[0]["go"] == "dawgs"
+
+            # Test the force=True
+            mock_dict = {
+                "not_implemented": {self.test_endpoint: {"api": "TEST"}}
+            }  # noqa
+            with patch.dict(data_utils.__dict__, {"ENDPOINTS_DICT": mock_dict}):  # noqa
+                data = self.client.pull_year(
+                    self.year_1, self.test_endpoint, force=True
+                )
                 self.assertIsInstance(data, list)
 
     def test_pull_data_invalid_endpoint(self):
@@ -119,7 +150,7 @@ class TestCfbdClient(unittest.TestCase):
         """
         # Test pull_data with an invalid endpoint
         with self.assertRaises(EndpointNotValid):
-            _ = self.client.pull_data(self.year_1, "invalid_endpoint")
+            _ = self.client.pull_year(self.year_1, "invalid_endpoint")
 
     def test_api_key_error(self):
         """
@@ -176,7 +207,7 @@ class TestCfbdClient(unittest.TestCase):
         Test that the load_data function loads data with just json lines in it.
         """
         mock_dict = {"implemented": {self.test_endpoint: {"api": "ZApi"}}}
-        with patch.dict(data_utils.__dict__, {"ENDPOINT_DICT": mock_dict}):
+        with patch.dict(data_utils.__dict__, {"ENDPOINTS_DICT": mock_dict}):
             data = self.client.load_to_df(self.test_endpoint, save_to_db=True)
             assert data.shape[0] == 4
             assert data.shape[1] == 3
@@ -201,6 +232,57 @@ class TestCfbdClient(unittest.TestCase):
         Test that the help function runs
         """
         assert self.client.help()
+
+    def test_pull_data_func(self):
+        # Create an instance of the class
+        my_api = self.client
+
+        # Mock the `pull_year()` method
+        def mock_pull_year(year, endpoint_name, request_params, save, force):
+            return [year]
+
+        my_api.pull_year = MagicMock(side_effect=mock_pull_year)
+
+        # Test with a single year
+        results = my_api.pull_data(2020, "my_endpoint")
+        assert len(results) == 1
+        assert results[0] == 2020
+
+    def test_pull_data_range(self):
+        # Create an instance of the class
+        my_api = self.client
+
+        # Mock the `pull_year()` method
+        def mock_pull_year(year, endpoint_name, request_params, save, force):
+            return [year]
+
+        my_api.pull_year = MagicMock(side_effect=mock_pull_year)
+
+        # Test with a single year
+        results = my_api.pull_data(2020, "my_endpoint")
+        assert len(results) == 1
+        assert results[0] == 2020
+
+        # Test with a range of years
+        results = my_api.pull_data(range(2018, 2021), "my_endpoint", save=False)  # noqa
+        assert len(results) == 3
+        assert results[0] == 2020
+        assert results[1] == 2019
+        assert results[2] == 2018
+
+        # Test with a list of years
+        results = my_api.pull_data([2022, 2023], "my_endpoint", force=True)
+        assert len(results) == 2
+        assert results[0] == 2023
+        assert results[1] == 2022
+
+        # Test with a list of years
+        results = my_api.pull_data((2000, 2003), "my_endpoint", force=True)
+        assert len(results) == 4
+        assert results[0] == 2003
+        assert results[1] == 2002
+        assert results[2] == 2001
+        assert results[3] == 2000
 
 
 if __name__ == "__main__":
